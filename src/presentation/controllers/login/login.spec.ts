@@ -4,7 +4,7 @@ import { ValidateLoginBody } from "../../protocols/validate-login-body";
 import { Login } from "../../../domain/models/login";
 import { HttpRequest, HttpResponse } from '../../protocols/http';
 import { MissingParamError } from '../../errors/missing-param-error';
-import { InvalidParamError } from "../../errors";
+import { InvalidParamError, NotFoundError } from "../../errors";
 import { CheckLogin } from "../../../domain/useCases/check-login";
 
 const httpRequestStub: HttpRequest = {
@@ -117,5 +117,15 @@ describe("LoginController", () => {
     await sut.handle(httpRequestStub);
 
     expect(checkLoginSpy).toHaveBeenCalledWith(httpRequestStub.body);
+  })
+
+  it("Should return 404 with CheckLogin returns false", async () => {
+    const { sut, checkLoginStub } = makeSut();
+
+    vi.spyOn(checkLoginStub, "check").mockReturnValueOnce(new Promise(resolve => resolve(false)));
+    const httpResponse = await sut.handle(httpRequestStub);
+
+    expect(httpResponse.statusCode).toBe(404);
+    expect(httpResponse.body).toEqual(new NotFoundError());
   })
 })
