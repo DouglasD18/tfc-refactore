@@ -5,12 +5,23 @@ import { Login } from "../../../domain/models/login";
 import { HttpRequest, HttpResponse } from '../../protocols/http';
 import { MissingParamError } from '../../errors/missing-param-error';
 import { InvalidParamError } from "../../errors";
+import { CheckLogin } from "../../../domain/useCases/check-login";
 
 const httpRequestStub: HttpRequest = {
   body: {
     email: "valid@mail.com",
     password: "valid_password"
   }
+}
+
+const makeCheckLoginStub = (): CheckLogin => {
+  class CheckLoginStub implements CheckLogin {
+    check(body: Login): Promise<string | boolean> {
+      return new Promise(resolve => resolve("Token"));
+    }
+  }
+
+  return new CheckLoginStub();
 }
 
 const makeValidateLoginBodyStub = (): ValidateLoginBody => {
@@ -26,15 +37,18 @@ const makeValidateLoginBodyStub = (): ValidateLoginBody => {
 interface typesSut {
   sut: LoginController
   validateLoginBodyStub: ValidateLoginBody
+  checkLoginStub: CheckLogin
 }
 
 const makeSut = (): typesSut => {
   const validateLoginBodyStub = makeValidateLoginBodyStub();
-  const sut = new LoginController(validateLoginBodyStub);
+  const checkLoginStub = makeCheckLoginStub();
+  const sut = new LoginController(validateLoginBodyStub, checkLoginStub);
 
   return {
     sut,
-    validateLoginBodyStub
+    validateLoginBodyStub,
+    checkLoginStub
   }
 }
 
@@ -94,5 +108,14 @@ describe("LoginController", () => {
     const httpResponse: HttpResponse = await sut.handle(httpRequestStub);
 
     expect(httpResponse.statusCode).toBe(200);
+  })
+
+  it("Should call CheckLogin with correct body", async () => {
+    const { sut, checkLoginStub } = makeSut();
+
+    const checkLoginSpy = vi.spyOn(checkLoginStub, "check");
+    await sut.handle(httpRequestStub);
+
+    expect(checkLoginSpy).toHaveBeenCalledWith(httpRequestStub.body);
   })
 })
