@@ -1,6 +1,9 @@
 import { Controller } from "../../protocols/controller";
 import { HttpRequest, HttpResponse } from "../../protocols/http";
 import { ValidateLoginBody } from "../../protocols/validate-login-body";
+import { badRequest } from '../../helpers/http';
+import { MissingParamError } from '../../errors/missing-param-error';
+import { InvalidParamError } from '../../errors/invalid-param-error';
 
 export class LoginController implements Controller {
   constructor(
@@ -8,9 +11,15 @@ export class LoginController implements Controller {
   ) {}
 
   handle(httpRequest: HttpRequest): Promise<HttpResponse> {
-    return new Promise(resolve => resolve({
-      statusCode: 400,
-      body: ""
-    }))
+    const { body } = httpRequest;
+    const validateReturn = this.validateLoginBody.validate(body);
+    let returned: HttpResponse;
+    if (validateReturn[0] === "MissingParam") {
+      returned = badRequest(new MissingParamError(validateReturn[1]));
+    } else if (validateReturn[0] === "InvalidParam") {
+      returned = badRequest(new InvalidParamError(validateReturn[1], validateReturn[2]));
+    }
+
+    return new Promise(resolve => resolve(returned));
   }
 }
