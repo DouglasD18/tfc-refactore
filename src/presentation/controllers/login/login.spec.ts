@@ -3,8 +3,7 @@ import { LoginController } from './login';
 import { ValidateLoginBody } from "../../protocols/validate-login-body";
 import { Login } from "../../../domain/models/login";
 import { HttpRequest, HttpResponse } from '../../protocols/http';
-import { MissingParamError } from '../../errors/missing-param-error';
-import { InvalidParamError, NotFoundError } from "../../errors";
+import { InvalidParamError, MissingParamError, NotFoundError, ServerError } from "../../errors";
 import { CheckLogin } from "../../../domain/useCases/check-login";
 
 const httpRequestStub: HttpRequest = {
@@ -119,7 +118,7 @@ describe("LoginController", () => {
     expect(checkLoginSpy).toHaveBeenCalledWith(httpRequestStub.body);
   })
 
-  it("Should return 404 with CheckLogin returns false", async () => {
+  it("Should return 404 if CheckLogin returns false", async () => {
     const { sut, checkLoginStub } = makeSut();
 
     vi.spyOn(checkLoginStub, "check").mockReturnValueOnce(new Promise(resolve => resolve(false)));
@@ -127,5 +126,15 @@ describe("LoginController", () => {
 
     expect(httpResponse.statusCode).toBe(404);
     expect(httpResponse.body).toEqual(new NotFoundError());
+  })
+
+  it("Should return 500 if CheckLogin throws", async () => {
+    const { sut, checkLoginStub } = makeSut();
+
+    vi.spyOn(checkLoginStub, "check").mockReturnValueOnce(new Promise((_r, reject) => reject(new Error())));
+    const httpResponse = await sut.handle(httpRequestStub);
+
+    expect(httpResponse.statusCode).toBe(500);
+    expect(httpResponse.body).toEqual(new ServerError());
   })
 })
