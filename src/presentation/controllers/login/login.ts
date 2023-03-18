@@ -19,11 +19,11 @@ export class LoginController implements Controller {
     } else if (validateReturn[0] === "InvalidParam") {
       returned = badRequest(new InvalidParamError(validateReturn[1], validateReturn[2]));
     }
-
-    if (returned.body) {
+    
+    if (typeof returned !== "undefined") {
       return new Promise(resolve => resolve(returned));
     }
 
-    return new Promise(resolve => resolve(ok("")));
+    return new Promise(resolve => resolve(ok("Success")));
   }
 }

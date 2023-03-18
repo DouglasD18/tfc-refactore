@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { LoginController } from './login';
 import { ValidateLoginBody } from "../../protocols/validate-login-body";
 import { Login } from "../../../domain/models/login";
-import { HttpRequest } from '../../protocols/http';
+import { HttpRequest, HttpResponse } from '../../protocols/http';
 import { MissingParamError } from '../../errors/missing-param-error';
 import { InvalidParamError } from "../../errors";
 
@@ -86,5 +86,13 @@ describe("LoginController", () => {
 
     expect(httpResponse.statusCode).toBe(400);
     expect(httpResponse.body).toEqual(new InvalidParamError("password", "Password must be a string with length greater than 5"));
+  })
+
+  it("Should return 200 when ValidateLoginBody returns true", async () => {
+    const { sut } = makeSut();
+
+    const httpResponse: HttpResponse = await sut.handle(httpRequestStub);
+
+    expect(httpResponse.statusCode).toBe(200);
   })
 })
